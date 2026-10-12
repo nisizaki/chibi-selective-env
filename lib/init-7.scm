@@ -167,6 +167,24 @@
               (cons (rename (quote list)) ids)))
       (cdr expr)))))
 
+;; (capture-environment/parent parent id ...): like capture-environment, but
+;; the parent environment is given explicitly (an evaluated expression) and
+;; should be long-lived, since it is retained by the result.
+(define-syntax capture-environment/parent
+  (er-macro-transformer
+   (lambda (expr rename compare)
+     ((lambda (parent ids)
+        (for-each (lambda (id)
+                    (if (not (identifier? id))
+                        (error "capture-environment/parent: not an identifier" id)))
+                  ids)
+        (list (rename (quote %make-capture-env))
+              parent
+              (list (rename (quote quote)) (map identifier->symbol ids))
+              (cons (rename (quote list)) ids)))
+      (cadr expr)
+      (cddr expr)))))
+
 (define-syntax cond
   (er-macro-transformer
    (lambda (expr rename compare)
