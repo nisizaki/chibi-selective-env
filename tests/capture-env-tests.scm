@@ -1,10 +1,14 @@
 (cond-expand
  (modules
   (import (chibi)
-          (only (chibi test) test-begin test test-error test-end)))
+          (only (chibi test) test-begin test test-error test-end)
+          (only (scheme base) guard)))
  (else #f))
 
 (test-begin "capture-environment")
+
+(define (raises? thunk)
+  (guard (e (#t #t)) (thunk) #f))
 
 (define (make-env)
   (let ((huge-buffer (make-vector 1000 0))
@@ -51,6 +55,20 @@
 
 ;; errors
 (test-error (eval (quote (let ((x 1)) (capture-environment x x))) (interaction-environment)))
-(test-error (eval (quote (capture-environment 1)) (interaction-environment)))
+;; (raises? is bound outside of test: expansion-time errors raised inside a
+;; test form are not visible to a guard nested in it)
+(define non-id-raises?
+  (raises? (lambda () (eval (quote (capture-environment 1)) (interaction-environment)))))
+(test #t non-id-raises?)
+;; non-identifier arguments are rejected before being evaluated
+(define side-effect #f)
+(define non-id-expr-raises?
+  (raises? (lambda () (eval (quote (capture-environment (set! side-effect #t))) (interaction-environment)))))
+(test #t non-id-expr-raises?)
+(test #f side-effect)
+;; unbound variables are an error when the captured value is computed
+(define (capture-later) (capture-environment later-var))
+(define unbound-raises? (raises? capture-later))
+(test #t unbound-raises?)
 
 (test-end)

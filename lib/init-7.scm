@@ -152,12 +152,15 @@
 
 ;; (capture-environment id ...): fresh env holding only a snapshot of the
 ;; listed variables; the parent is the interaction environment, so the
-;; lexical scopes of the capture site are not retained.  Non-identifier
-;; arguments are rejected at run time by %make-capture-env.
+;; lexical scopes of the capture site are not retained.
 (define-syntax capture-environment
   (er-macro-transformer
    (lambda (expr rename compare)
      ((lambda (ids)
+        (for-each (lambda (id)
+                    (if (not (identifier? id))
+                        (error "capture-environment: not an identifier" id)))
+                  ids)
         (list (rename (quote %make-capture-env))
               (list (rename (quote interaction-environment)))
               (list (rename (quote quote)) (map identifier->symbol ids))
