@@ -280,6 +280,7 @@ test-r7rs: chibi-scheme$(EXE)
 
 test-syntax: chibi-scheme$(EXE)
 	$(CHIBI) tests/syntax-tests.scm
+	$(CHIBI) tests/capture-env-tests.scm
 
 test-net: chibi-scheme$(EXE)
 	$(CHIBI) tests/net-tests.scm

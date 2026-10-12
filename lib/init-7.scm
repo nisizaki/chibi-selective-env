@@ -150,6 +150,20 @@
          (make-renamer mac-env)
          (lambda (x y) (identifier=? use-env x use-env y))))))
 
+;; (capture-environment id ...): fresh env holding only a snapshot of the
+;; listed variables; the parent is the interaction environment, so the
+;; lexical scopes of the capture site are not retained.  Non-identifier
+;; arguments are rejected at run time by %make-capture-env.
+(define-syntax capture-environment
+  (er-macro-transformer
+   (lambda (expr rename compare)
+     ((lambda (ids)
+        (list (rename (quote %make-capture-env))
+              (list (rename (quote interaction-environment)))
+              (list (rename (quote quote)) (map identifier->symbol ids))
+              (cons (rename (quote list)) ids)))
+      (cdr expr)))))
+
 (define-syntax cond
   (er-macro-transformer
    (lambda (expr rename compare)

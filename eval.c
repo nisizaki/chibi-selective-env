@@ -232,6 +232,34 @@ sexp sexp_extend_env (sexp ctx, sexp env, sexp vars, sexp value) {
   return e;
 }
 
+sexp sexp_make_capture_env_op (sexp ctx, sexp self, sexp_sint_t n, sexp parent, sexp names, sexp values) {
+  sexp ls, ls2;
+  sexp_gc_var2(e, tmp);
+  sexp_assert_type(ctx, sexp_envp, SEXP_ENV, parent);
+  for (ls = names, ls2 = values; sexp_pairp(ls) && sexp_pairp(ls2);
+       ls = sexp_cdr(ls), ls2 = sexp_cdr(ls2)) {
+    if (!sexp_symbolp(sexp_car(ls)))
+      return sexp_user_exception(ctx, self, "capture-environment: not a symbol", sexp_car(ls));
+    if (sexp_truep(sexp_memq(ctx, sexp_car(ls), sexp_cdr(ls))))
+      return sexp_user_exception(ctx, self, "capture-environment: duplicate identifier", sexp_car(ls));
+  }
+  if (!sexp_nullp(ls) || !sexp_nullp(ls2))
+    return sexp_user_exception(ctx, self, "capture-environment: names and values differ", names);
+  sexp_gc_preserve2(ctx, e, tmp);
+  e = sexp_alloc_type(ctx, env, SEXP_ENV);
+  if (!sexp_exceptionp(e)) {
+    sexp_env_parent(e) = parent;
+    sexp_env_bindings(e) = SEXP_NULL;
+#if SEXP_USE_STABLE_ABI || SEXP_USE_RENAME_BINDINGS
+    sexp_env_renames(e) = SEXP_NULL;
+#endif
+    for (ls = names, ls2 = values; sexp_pairp(ls); ls = sexp_cdr(ls), ls2 = sexp_cdr(ls2))
+      sexp_env_push(ctx, e, tmp, sexp_car(ls), sexp_car(ls2));
+  }
+  sexp_gc_release2(ctx);
+  return e;
+}
+
 sexp sexp_extend_synclo_env (sexp ctx, sexp env) {
   sexp e1, e2;
   sexp_gc_var1(e);
